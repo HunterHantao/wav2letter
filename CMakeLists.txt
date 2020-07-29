@@ -232,6 +232,19 @@ target_link_libraries(
   wav2letter++
   )
 
+
+#--------------------------------Train Adapt------------
+
+add_executable(
+  Train_adapt
+  Train_adapt.cpp
+)
+
+target_link_libraries(
+  Train_adapt
+  wav2letter++
+)
+
 # ----------------------------- Test -----------------------------
 add_executable(
   Test

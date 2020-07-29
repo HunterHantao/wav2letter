@@ -64,6 +64,7 @@ if( FFTW_ROOT )
     NO_DEFAULT_PATH
     )
 else()
+  message(STATUS  ${PKG_FFTW_LIBRARY_DIRS} ${LIB_INSTALL_DIR})
   find_library(
     FFTW_LIB
     NAMES "fftw3"
@@ -85,6 +86,9 @@ else()
     PATHS ${PKG_FFTW_INCLUDE_DIRS} ${INCLUDE_INSTALL_DIR}
     )
 endif( FFTW_ROOT )
+message(STATUS "FFTW_INCLUDE ==> ${FFTW_INCLUDES}")
+message(STATUS "FFTWF LIB ==> ${FFTWF_LIB}")
+
 set(FFTW_LIBRARIES ${FFTW_LIB} ${FFTWF_LIB})
 if(FFTWL_LIB)
   set(FFTW_LIBRARIES ${FFTW_LIBRARIES} ${FFTWL_LIB})
