@@ -21,10 +21,6 @@ DEFINE_string(train, "", "comma-separated list of training data");
 DEFINE_string(valid, "", "comma-separated list of valid data");
 DEFINE_string(test, "", "comma-separated list of test data");
 DEFINE_int64(batchsize, 1, "batch size (per process in distributed training)");
-DEFINE_int64(
-    validbatchsize,
-    -1,
-    "batch size (per process in distributed training) for the valid data, if -1 then use train batchsize");
 DEFINE_string(input, "flac", "input feature");
 DEFINE_int64(samplerate, 16000, "sample rate (Hz)");
 DEFINE_int64(channels, 1, "number of input channels");
@@ -85,7 +81,7 @@ DEFINE_double(lr, 1.0, "learning rate");
 DEFINE_double(momentum, 0.0, "momentum factor");
 DEFINE_double(weightdecay, 0.0, "weight decay (L2 penalty)");
 DEFINE_double(lrcrit, 0, "criterion learning rate");
-DEFINE_int64(warmup, 1, "the LR warmup parameter, in updates");
+DEFINE_int64(warmup, 8000, "the LR warmup parameter, in updates");
 DEFINE_int64(
     saug_start_update,
     -1,
@@ -134,6 +130,7 @@ DEFINE_int64(
     "Stride millisecond for power spectrum feature");
 
 // SPECAUGMENT OPTIONS
+DEFINE_bool(use_saug, false, "Use SpecAugment");
 DEFINE_int64(saug_fmaskf, 27, "Max number of frequency bands that are masked");
 DEFINE_int64(saug_fmaskn, 2, "Number of frequency masks");
 DEFINE_int64(saug_tmaskt, 100, "Max number of timesteps that are masked");
@@ -322,10 +319,6 @@ DEFINE_int64(
     world_size,
     1,
     "total number of the process (Used if rndv_filepath is not empty)");
-DEFINE_int64(
-    max_devices_per_node,
-    8,
-    "the maximum number of devices per training node");
 DEFINE_string(
     rndv_filepath,
     "",

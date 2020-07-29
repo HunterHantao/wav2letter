@@ -101,6 +101,7 @@ constexpr const char* kAsgCriterion = "asg";
 constexpr const char* kSeq2SeqCriterion = "seq2seq";
 constexpr const char* kTransformerCriterion = "transformer";
 constexpr int kTargetPadValue = -1;
+constexpr int kMaxDevicePerNode = 8;
 
 // Feature params
 constexpr int kLifterParam = 22;
@@ -112,7 +113,6 @@ DECLARE_string(train);
 DECLARE_string(valid);
 DECLARE_string(test);
 DECLARE_int64(batchsize);
-DECLARE_int64(validbatchsize);
 DECLARE_string(input);
 DECLARE_int64(samplerate);
 DECLARE_int64(channels);
@@ -187,6 +187,7 @@ DECLARE_int64(framestridems);
 
 /* ========== SPECAUGMENT OPTIONS ========== */
 
+DECLARE_bool(use_saug);
 DECLARE_int64(saug_fmaskf);
 DECLARE_int64(saug_fmaskn);
 DECLARE_int64(saug_tmaskt);
@@ -298,7 +299,6 @@ DECLARE_double(decoderdropout);
 DECLARE_bool(enable_distributed);
 DECLARE_int64(world_rank);
 DECLARE_int64(world_size);
-DECLARE_int64(max_devices_per_node);
 DECLARE_string(rndv_filepath);
 
 /* ========== FB SPECIFIC ========== */

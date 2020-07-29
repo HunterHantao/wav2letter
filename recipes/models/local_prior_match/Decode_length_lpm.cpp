@@ -63,6 +63,7 @@ int main(int argc, char** argv) {
 
   LOG(INFO) << "[network] " << network->prettyString();
 
+  af::setMemStepSize(FLAGS_memstepsize);
   af::setSeed(FLAGS_seed);
 
   DictionaryMap dicts;
