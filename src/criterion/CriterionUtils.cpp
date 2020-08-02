@@ -72,5 +72,14 @@ Variable getLinearTarget(const Variable& targetVar, int T) {
   }
   return Variable(af::array(T, B, newTarget.data()), false);
 }
+/*
+// batch MSE loss, input: 0 NFEAT 1 -1--> batch size* featureNum*1*Time
+Variable BatchMSE(const Variable& outputVar, const Variable& targetVar) {
+  int B = targetVar.dims(0);
+  int L = targetVar.dims(1)* targetVar.dims(2)* targetVar.dims(3);
 
+  auto loss_mse_func = fl::MeanSquaredError();
+  auto loss_adapt = loss_mse_func(output_adapt,output_adapt_dec) ;
+}
+*/
 } // namespace w2l

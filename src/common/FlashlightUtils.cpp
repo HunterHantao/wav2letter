@@ -14,6 +14,7 @@ int64_t numTotalParams(std::shared_ptr<fl::Module> module) {
   int64_t params = 0;
   for (auto& p : module->params()) {
     params += p.elements();
+//    af::print("Weights", p.array());
   }
   return params;
 }

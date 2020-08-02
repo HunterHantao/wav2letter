@@ -145,6 +145,8 @@ DEFINE_string(datadir, "", "speech data directory");
 DEFINE_string(tokensdir, "", "dictionary directory");
 DEFINE_string(rundir, "", "experiment root directory");
 DEFINE_string(archdir, "", "arch root directory");
+DEFINE_string(archadapt_dir, "", "arch adapt root directory"); // HT
+
 DEFINE_string(flagsfile, "", "File specifying gflags");
 DEFINE_string(runname, "", "name of current run");
 DEFINE_int64(nthread, 1, "specify number of threads for data parallelization");
@@ -169,6 +171,7 @@ DEFINE_double(
 
 // ARCHITECTURE OPTIONS
 DEFINE_string(arch, "default", "network architecture");
+DEFINE_string(arch_adapt, "", "arch adapt network architecture");
 DEFINE_string(criterion, kAsgCriterion, "training criterion");
 DEFINE_int64(encoderdim, 0, "Dimension of encoded hidden state.");
 

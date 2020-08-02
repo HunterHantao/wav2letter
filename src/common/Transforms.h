@@ -14,6 +14,7 @@
 #include <stdexcept>
 #include <unordered_map>
 #include <vector>
+#include <iostream>
 
 #include "common/Defines.h"
 #include "libraries/common/Dictionary.h"
@@ -144,8 +145,10 @@ std::vector<T> normalize(
     T mean = sum / perBatchSz;
     std::transform(
         start, start + perBatchSz, start, [mean](T x) { return x - mean; });
+
     T sq_sum = std::inner_product(start, start + perBatchSz, start, 0.0);
     T stddev = std::sqrt(sq_sum / perBatchSz);
+//    std::cout << "Mean  " << mean<< "and stddev"<<stddev<<std::endl;
     if (stddev > threshold) {
       std::transform(start, start + perBatchSz, start, [stddev](T x) {
         return x / stddev;

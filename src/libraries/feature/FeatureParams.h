@@ -163,4 +163,45 @@ struct FeatureParams {
   }
 };
 
+
+// redesign the osstream
+/*
+ostream& operator<<(ostream& os, const FeatureParams& featureParams) {
+    return os << "samplingFreq: " << featureParams.samplingFreq << endl
+              << "frameSizeMs: " << featureParams.frameSizeMs << endl
+              << "frameStrideMs: " << featureParams.frameStrideMs << endl
+              << "numFilterbankChans:" << featureParams.numFilterbankChans << endl
+              << "lowFreqFilterbank:" << featureParams.lowFreqFilterbank << endl
+              << "highFreqFilterbank:" << featureParams.highFreqFilterbank << endl
+              << "numCepstralCoeffs:" << featureParams.numCepstralCoeffs << endl
+              << "lifterParam:" << featureParams.lifterParam << endl
+              << "deltaWindow:" << featureParams.deltaWindow << endl
+              << "accWindow:" << featureParams.accWindow << endl
+              << "windowType:" << featureParams.windowType << endl
+              << "preemCoef:" << featureParams.preemCoef << endl
+              << "melFloor:" << featureParams.melFloor << endl
+              << "ditherVal:" << featureParams.ditherVal << endl
+              << "usePower:" << featureParams.usePower << endl
+              << "useEnergy:" << featureParams.useEnergy << endl
+              << "rawEnergy:" << featureParams.rawEnergy << endl
+              << "zeroMeanFrame:" << featureParams.zeroMeanFrame << endl ;
+
+*/
 } // namespace w2l
+
+/*
+
+struct Book {
+    string title;
+    int pageN;
+    int review;
+    float price;
+};
+
+ostream& operator<<(ostream& os, const Book& book) {
+    return os << "Title: " << book.title << endl
+              << "Pages: " << book.pageN << endl
+              << "Review: " << book.review << endl
+              << "Price:" << book.price << endl;
+}
+*/

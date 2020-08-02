@@ -7,7 +7,7 @@
  */
 
 #include "Mfsc.h"
-
+#include <iostream>
 #include <algorithm>
 #include <cstddef>
 #include <numeric>
@@ -72,6 +72,9 @@ std::vector<float> Mfsc::apply(const std::vector<float>& input) {
     std::swap(mfscFeat, newMfscFeat);
     ++numFeat;
   }
+//  std::cout << "Before trilinear mfscFeat" << std::endl;
+//  for (auto i = mfscFeat.begin(); i != mfscFeat.end(); ++i)
+//    std::cout << *i << ' '<< std::endl;
   // Derivatives will not be computed if windowsize < 0
   return derivatives_.apply(mfscFeat, numFeat);
 }

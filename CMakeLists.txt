@@ -7,11 +7,12 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+list(APPEND CMAKE_PREFIX_PATH "/usr/include" "/usr/lib/x86_64-linux-gnu")
+
 # ----------------------------- Configuration -----------------------------
 
 option(W2L_BUILD_LIBRARIES_ONLY "Build wav2letter-libraries only" OFF)
-option(W2L_BUILD_INFERENCE
-  "Build inference even when W2L_BUILD_LIBRARIES_ONLY is set" OFF)
+option(W2L_BUILD_INFERENCE "Build inference even when W2L_BUILD_LIBRARIES_ONLY is set" OFF)
 option(W2L_LIBRARIES_USE_CUDA "Use CUDA in libraries-only build" ON)
 option(W2L_LIBRARIES_USE_KENLM "Use KenLM in libraries-only build" ON)
 option(W2L_LIBRARIES_USE_MKL "Use MKL in libraries-only build" ON)
@@ -232,18 +233,16 @@ target_link_libraries(
   wav2letter++
   )
 
-
-#--------------------------------Train Adapt------------
-
+# ----------------------------- Train -----------------------------
 add_executable(
-  Train_adapt
-  Train_adapt.cpp
+  REF_Train
+  REF_Train.cpp
 )
 
 target_link_libraries(
-  Train_adapt
+  REF_Train
   wav2letter++
-)
+  )
 
 # ----------------------------- Test -----------------------------
 add_executable(

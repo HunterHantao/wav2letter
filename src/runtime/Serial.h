@@ -48,15 +48,13 @@ struct W2lSerializer {
     try {
       std::ofstream file(filepath, std::ios::binary);
       if (!file.is_open()) {
-        throw std::runtime_error(
-            "failed to open file for writing: " + filepath);
+        throw std::runtime_error("failed to open file for writing");
       }
       cereal::BinaryOutputArchive ar(file);
       ar(std::string(W2L_VERSION));
       ar(args...);
     } catch (const std::exception& ex) {
-      LOG(ERROR) << "Error while saving \"" << filepath << "\": " << ex.what()
-                 << "\n";
+      LOG(ERROR) << "Error while saving: " << ex.what() << "\n";
       throw;
     }
   }
@@ -66,16 +64,14 @@ struct W2lSerializer {
     try {
       std::ifstream file(filepath, std::ios::binary);
       if (!file.is_open()) {
-        throw std::runtime_error(
-            "failed to open file for reading: " + filepath);
+        throw std::runtime_error("failed to open file for reading");
       }
       std::string version;
       cereal::BinaryInputArchive ar(file);
       ar(version);
       ar(args...);
     } catch (const std::exception& ex) {
-      LOG(ERROR) << "Error while loading \"" << filepath << "\": " << ex.what()
-                 << "\n";
+      LOG(ERROR) << "Error while loading: " << ex.what() << "\n";
       throw;
     }
   }

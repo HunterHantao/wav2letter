@@ -200,6 +200,8 @@ DECLARE_string(datadir);
 DECLARE_string(tokensdir);
 DECLARE_string(rundir);
 DECLARE_string(archdir);
+DECLARE_string(archadapt_dir); // archadapt_dir
+DECLARE_string(arch_adapt);  // arch adapt file name
 DECLARE_string(flagsfile);
 DECLARE_string(runname);
 DECLARE_int64(nthread);

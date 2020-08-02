@@ -205,25 +205,17 @@ int main(int argc, char** argv) {
 
   /* =========== Create Network & Optimizers / Reload Snapshot ============ */
   std::shared_ptr<fl::Module> network;
-  std::shared_ptr<fl::Module> network_adapt_enc;
-  std::shared_ptr<fl::Module> network_adapt_dec;
   std::shared_ptr<SequenceCriterion> criterion;
   std::shared_ptr<fl::FirstOrderOptimizer> netoptim;
-  std::shared_ptr<fl::FirstOrderOptimizer> net_adaptenc_optim;
-  std::shared_ptr<fl::FirstOrderOptimizer> net_adaptdec_optim;
   std::shared_ptr<fl::FirstOrderOptimizer> critoptim;
 
   auto scalemode = getCriterionScaleMode(FLAGS_onorm, FLAGS_sqnorm);
   if (runStatus == kTrainMode) {
     auto archfile = pathsConcat(FLAGS_archdir, FLAGS_arch);
-    auto archfile_adapt = pathsConcat(FLAGS_archadapt_dir, FLAGS_arch_adapt);
     LOG_MASTER(INFO) << "Loading architecture file from " << archfile;
     auto numFeatures = getSpeechFeatureSize();
-
     // Encoder network, works on audio
     network = createW2lSeqModule(archfile, numFeatures, numClasses);
-    network_adapt_enc = createW2lSeqModule(archfile_adapt, numFeatures, numFeatures);
-    network_adapt_dec = createW2lSeqModule(archfile_adapt, numFeatures, numFeatures);
 
     if (FLAGS_criterion == kCtcCriterion) {
       criterion = std::make_shared<CTCLoss>(scalemode);
@@ -247,40 +239,22 @@ int main(int argc, char** argv) {
   } else if (runStatus == kForkMode) {
     std::unordered_map<std::string, std::string> cfg; // unused
     W2lSerializer::load(reloadPath, cfg, network, criterion);
-    // adapter parameter, warning, may break the pretrained model feature
-    auto numFeatures = getSpeechFeatureSize();
-    auto archfile = pathsConcat(FLAGS_archdir, FLAGS_arch);
-    auto archfile_adapt = pathsConcat(FLAGS_archadapt_dir, FLAGS_arch_adapt);
-    // adapter
-    network_adapt_enc = createW2lSeqModule(archfile_adapt, numFeatures, numFeatures);
-    network_adapt_dec = createW2lSeqModule(archfile_adapt, numFeatures, numFeatures);
-
   } else { // kContinueMode
     std::unordered_map<std::string, std::string> cfg; // unused
     W2lSerializer::load(
         reloadPath, cfg, network, criterion, netoptim, critoptim);
   }
   LOG_MASTER(INFO) << "[Network] " << network->prettyString();
-  LOG_MASTER(INFO) << "[Network Params]: " << numTotalParams(network) << "]";
-  LOG_MASTER(INFO) << "[network_adapt_enc] " << network_adapt_enc->prettyString();
-  LOG_MASTER(INFO) << "[network_adapt_dec] " << network_adapt_dec->prettyString();
-  LOG_MASTER(INFO) << "[network_adapt_enc Params: " << numTotalParams(network_adapt_enc) << "]";
-  LOG_MASTER(INFO) << "[network_adapt_dec Params: " << numTotalParams(network_adapt_dec) << "]";
+  LOG_MASTER(INFO) << "[Network Params: " << numTotalParams(network) << "]";
   LOG_MASTER(INFO) << "[Criterion] " << criterion->prettyString();
 
   if (runStatus == kTrainMode || runStatus == kForkMode) {
     netoptim = initOptimizer(
         {network}, FLAGS_netoptim, FLAGS_lr, FLAGS_momentum, FLAGS_weightdecay);
-    net_adaptenc_optim = initOptimizer(
-            {network_adapt_enc}, FLAGS_netoptim, FLAGS_lr, FLAGS_momentum, FLAGS_weightdecay);
-    net_adaptdec_optim = initOptimizer(
-                {network_adapt_dec}, FLAGS_netoptim, FLAGS_lr, FLAGS_momentum, FLAGS_weightdecay);
     critoptim =
         initOptimizer({criterion}, FLAGS_critoptim, FLAGS_lrcrit, 0.0, 0.0);
   }
   LOG_MASTER(INFO) << "[Network Optimizer] " << netoptim->prettyString();
-  LOG_MASTER(INFO) << "[network_adaptenc Optimizer] " << net_adaptenc_optim->prettyString();
-  LOG_MASTER(INFO) << "[network_adaptdec Optimizer] " << net_adaptdec_optim->prettyString();
   LOG_MASTER(INFO) << "[Criterion Optimizer] " << critoptim->prettyString();
 
   double initLinNetlr = FLAGS_linlr >= 0.0 ? FLAGS_linlr : FLAGS_lr;
@@ -381,28 +355,12 @@ int main(int argc, char** argv) {
             getRunFile(format("model_iter_%03d.bin", iter), runIdx, runPath);
         W2lSerializer::save(
             filename, config, network, criterion, netoptim, critoptim);
-        filename =
-                getRunFile(format("model_adaptenc_iter_%03d.bin", iter), runIdx, runPath);
-            W2lSerializer::save(
-                filename, config, network_adapt_enc, criterion, netoptim, critoptim);
-        filename =
-                   getRunFile(format("model_adaptdec_iter_%03d.bin", iter), runIdx, runPath);
-        W2lSerializer::save(
-                    filename, config, network_adapt_dec, criterion, netoptim, critoptim);
       }
 
       // save last model
       filename = getRunFile("model_last.bin", runIdx, runPath);
       W2lSerializer::save(
           filename, config, network, criterion, netoptim, critoptim);
-
-      filename = getRunFile("model_adaptenc_last.bin", runIdx, runPath);
-          W2lSerializer::save(
-              filename, config, network_adapt_enc, criterion, netoptim, critoptim);
-
-      filename = getRunFile("model_adaptdec_last.bin", runIdx, runPath);
-              W2lSerializer::save(
-                  filename, config, network_adapt_dec, criterion, netoptim, critoptim);
 
       // save if better than ever for one valid
       for (const auto& v : validminerrs) {
@@ -452,7 +410,7 @@ int main(int argc, char** argv) {
 
       // remap actual, predicted targets for evaluating edit distance error
       if (dicts.find(kTargetIdx) == dicts.end()) {
-        LOG(FATAL) << "Dictionary not provided for target : " << kTargetIdx;
+        LOG(FATAL) << "Dictionary not provided for target: " << kTargetIdx;
       }
       auto tgtDict = dicts.find(kTargetIdx)->second;
 
@@ -469,7 +427,6 @@ int main(int argc, char** argv) {
 
   auto test = [&evalOutput](
                   std::shared_ptr<fl::Module> ntwrk,
-                  std::shared_ptr<fl::Module> ntwrk_adapt_enc,
                   std::shared_ptr<SequenceCriterion> crit,
                   std::shared_ptr<W2lDataset> testds,
                   DatasetMeters& mtrs) {
@@ -479,21 +436,11 @@ int main(int argc, char** argv) {
     mtrs.wrdEdit.reset();
     mtrs.loss.reset();
 
-    // HHT: adaption loss is not considered in validation, due to the difficulty to add batch input
     for (auto& batch : *testds) {
-      // adaption layer
-      auto output_adapt = ntwrk_adapt_enc->forward({fl::input(batch[kInputIdx])}).front(); // main path
-      //auto output_adapt_2 =  ntwrk_adapt->forward({fl::input(batch[kInputIdx])}).front();
-
-      // least squares loss
-      //auto loss_adapt = ((output_adapt - output_adapt_2) * (output_adapt - output_adapt_2));
-
-      // original learning layer, ASR layer
-      //auto output = ntwrk->forward({fl::input(batch[kInputIdx])}).front();
-      auto output = ntwrk->forward({output_adapt}).front();
+      auto output = ntwrk->forward({fl::input(batch[kInputIdx])}).front();
       auto loss =
-          crit->forward({output, fl::Variable(batch[kTargetIdx], false)}).front();
-      //mtrs.loss.add(loss_adapt.array()) // add adaption loss
+          crit->forward({output, fl::Variable(batch[kTargetIdx], false)})
+              .front();
       mtrs.loss.add(loss.array());
       evalOutput(output.array(), batch[kTargetIdx], mtrs);
     }
@@ -515,8 +462,6 @@ int main(int argc, char** argv) {
                 &startUpdate,
                 reducer](
                    std::shared_ptr<fl::Module> ntwrk,
-                   std::shared_ptr<fl::Module> ntwrk_adapt_enc,
-				   std::shared_ptr<fl::Module> ntwrk_adapt_dec,
                    std::shared_ptr<SequenceCriterion> crit,
                    std::shared_ptr<W2lDataset> trainset,
                    std::shared_ptr<fl::FirstOrderOptimizer> netopt,
@@ -527,8 +472,6 @@ int main(int argc, char** argv) {
                    int64_t nbatches) {
     if (reducer) {
       fl::distributeModuleGrads(ntwrk, reducer);
-      fl::distributeModuleGrads(ntwrk_adapt_enc, reducer);
-      fl::distributeModuleGrads(ntwrk_adapt_dec, reducer);
       fl::distributeModuleGrads(crit, reducer);
     }
 
@@ -548,8 +491,6 @@ int main(int argc, char** argv) {
     }
 
     fl::allReduceParameters(ntwrk);
-    fl::allReduceParameters(ntwrk_adapt_enc);
-    fl::allReduceParameters(ntwrk_adapt_dec);
     fl::allReduceParameters(crit);
 
     auto resetTimeStatMeters = [&meters]() {
@@ -576,7 +517,7 @@ int main(int argc, char** argv) {
 
       // valid
       for (auto& vds : validds) {
-        test(ntwrk,ntwrk_adapt_enc, crit, vds.second, meters.valid[vds.first]);
+        test(ntwrk, crit, vds.second, meters.valid[vds.first]);
       }
 
       // print status
@@ -606,8 +547,6 @@ int main(int argc, char** argv) {
         initcritlr /= 2;
       }
       ntwrk->train();
-      ntwrk_adapt_enc->train();
-      ntwrk_adapt_dec->train();
       crit->train();
       if (FLAGS_reportiters == 0) {
         resetTimeStatMeters();
@@ -654,40 +593,11 @@ int main(int argc, char** argv) {
             curBatch >= FLAGS_saug_start_update) {
           input = saug->forward(input);
         }
-
-        // adaption layer
-        auto output_adapt = ntwrk_adapt_enc->forward({input}).front(); // main path
-        auto output_adapt_dec =  ntwrk_adapt_dec->forward({output_adapt}).front();
-        // debug
-        //af::print( "Input dimension " , input.array());
-        //af::print(" Adapt output dimension" , output_adapt.array());
-
-        auto output = ntwrk->forward({output_adapt}).front();
+        auto output = ntwrk->forward({input}).front();
         af::sync();
         meters.critfwdtimer.resume();
-        // mse loss
-        auto loss_mse_func = fl::MeanSquaredError();
-        auto B = output_adapt.dims(3);
-       // auto B2 = output_adapt.dims(1);
-       // auto B3 = output_adapt.dims(2);
-      //  auto B4 = output_adapt.dims(3);
-
-        fl::Variable MSEloss(af::randu(B), false);
-        for (int b = 0; b < B; ++b) {
-        	MSEloss(b) = loss_mse_func(output_adapt(af::span,af::span,af::span,b),output_adapt_dec(af::span,af::span,af::span,b)) ;
-        }
-        auto loss_adapt = MSEloss;
-
-
-    		// End mse loss
-
-        auto loss_model =
+        auto loss =
             crit->forward({output, fl::noGrad(batch[kTargetIdx])}).front();
-        // debug
-        //af::print( "loss model  dimension " , loss_model.array());
-        //af::print(" loss adapt dimension" , loss_adapt.array());
-        auto loss = loss_model + loss_adapt;
-
         af::sync();
         meters.fwdtimer.stopAndIncUnit();
         meters.critfwdtimer.stopAndIncUnit();
@@ -775,8 +685,6 @@ int main(int argc, char** argv) {
   if (FLAGS_linseg - startUpdate > 0) {
     train(
         network,
-        network_adapt_enc,
-		network_adapt_dec,
         linseg,
         trainds,
         linNetoptim,
@@ -798,8 +706,6 @@ int main(int argc, char** argv) {
     }
     train(
         network,
-        network_adapt_enc,
-		network_adapt_dec,
         criterion,
         trainds,
         netoptim,
@@ -819,8 +725,6 @@ int main(int argc, char** argv) {
 
   train(
       network,
-      network_adapt_enc,
-	  network_adapt_dec,
       criterion,
       trainds,
       netoptim,
